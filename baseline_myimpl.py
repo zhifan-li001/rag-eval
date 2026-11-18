@@ -127,7 +127,7 @@ def hit_at_k(ranked_ids: list[str], gold_ids: list[str], k: int) -> int:
 # ═══════════════════════════════════════════════════════════════
 def load_chunks() -> list[dict]:
     """复用 W2 的切块逻辑，得到 108 个块。"""
-    from w2_split_preview import chunk_one_doc, load_corpus
+    from split_preview import chunk_one_doc, load_corpus
 
     chunks: list[dict] = []
     for name, body in load_corpus(CORPUS_DIR):
