@@ -1,0 +1,14 @@
+# 核心：二字 TF-IDF 检索 + 判卷（纯 CPU，秒级启动）
+numpy>=1.24
+openai>=1.0
+python-dotenv>=1.0
+requests>=2.28
+
+# 语义检索 / MaxSim 精排（需要 torch，CPU 可跑，首次运行会下载 BGE 模型约 400MB）
+sentence-transformers>=3.0
+torch>=2.0
+transformers>=4.40
+
+# HTTP 服务（api_demo.py）
+fastapi>=0.110
+uvicorn[standard]>=0.29

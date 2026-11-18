@@ -1,0 +1,35 @@
+# 密钥：绝不提交（本仓库不含任何可用 Key）
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 向量与缓存的二进制产物不入库（baseline_embed.py 可重新生成）
+*.npz
+*.npy
+w4_token_vecs_cache.npz
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 中间产物
+*.log
+
+# 运行产物（脚本会重新生成）
+rerank_*.csv
+diag_rank_detail.csv
+judge_100_result.csv
+chunks.csv
+token_vecs_cache.npz
