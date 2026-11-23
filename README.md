@@ -54,7 +54,7 @@ MaxSim 原始的相似度是逐 token 取最大值后平均。引入温度系数
 
 - **MaxSim**：不做池化。query 的每个 token 向量与块内每个 token 向量求余弦，取每行最大值后平均（late interaction）。273 token 的块不再被压成 1 个向量，相似度不再被平均稀释。
 - **服务化**：`POST /ask`，Pydantic 校验（空问题、topk 越界返回 422），检索为空返回 200 + "资料中未提及"而非报错，模型侧超时 504、上游错误 502，索引在模块级只建一次。
-- **最小 Agent**：检索与计算器封装成两个工具，模型自主选择调用、记录调用链，设 5 步上限防死循环。实测计算题会调 `calc`、文档题会调 `search_kb`、无关问题（"今天北京天气"）一步都不调。
+- **最小 Agent**：检索与计算器封装成两个工具，模型自主选择调用、记录调用链，设 5 步上限防死循环。实测计算题会调 `calc`、文档题会调 `search_kb`、无关问题（"今天北京天气"）一步都不调。另附 `agent_tool_langchain.py`：用 `@tool` 装饰器重写同一循环，对照展示框架如何自动生成 schema、按名分发工具调用，以及结果仍需手动以 ToolMessage 回灌。
 
 ## 快速开始
 
@@ -100,6 +100,7 @@ python baseline.py                    # 二字 TF-IDF 全流程：检索 → 生
 python judge_100.py                   # 对已冻结的检索结果重新判卷
 python -m uvicorn api_demo:app --port 8010    # 打开 http://127.0.0.1:8010/docs
 python agent_min.py                   # 最小 Agent，观察工具调用链
+python agent_tool_langchain.py        # 同一循环的 @tool / LangChain 版（需 langchain-core、langchain-openai）
 ```
 
 `.env` 已在 `.gitignore` 中，不会被提交。
@@ -119,6 +120,7 @@ python agent_min.py                   # 最小 Agent，观察工具调用链
 | `judge_100.py` | 100 题判卷，输出逐题命中与失败归因 |
 | `api_demo.py` | FastAPI 封装，含参数校验与错误码分层 |
 | `agent_min.py` | 最小 Agent：工具调用循环 + 步数上限 |
+| `agent_tool_langchain.py` | 同一循环用 `@tool` 装饰器改写：schema 自动生成、工具按名分发、ToolMessage 回灌 |
 | `golden_set_100.csv` | 100 题基准（qid / category / question / gold_answer / gold_chunk_id） |
 | `paraphrase_43.csv` | 43 道改写题（同一问题的口语化重写） |
 | `eval_result_golden_set_100_top5.csv` | 冻结的检索记录与生成回答，判卷输入 |
