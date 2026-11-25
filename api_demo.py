@@ -1,11 +1,11 @@
 """
-最小知识库问答 HTTP 接口（FastAPI）。
+知识库问答 HTTP 接口（FastAPI）。
 
-作用：把 baseline_myimpl.py 里的 retrieve() 从「命令行脚本」变成「别人能调用的服务」。
-面试 Q16 的标准答案，就是把这个文件的设计讲清楚。
+将 baseline_myimpl.py 中的 retrieve() 封装为可远程调用的服务，
+包含请求参数校验、上下文长度限制、检索空结果处理与模型异常分层。
 
 启动：
-    D:/MyShoftware/Anaconda3/envs/py311_env/python.exe -m uvicorn api_demo:app --port 8010
+    python -m uvicorn api_demo:app --port 8010
 
 调用：
     curl -X POST http://127.0.0.1:8010/ask -H "Content-Type: application/json" -d "{\"question\":\"宠物饿了怎么办\"}"

@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-最小 Agent：两个工具 + 一个循环
+轻量工具调用 Agent：知识库检索 + 四则计算器
 ================================================================
-这个文件的目的不是做一个 Agent 产品，是让你**亲手跑通一次循环**，
-从而能回答面试官的问题：「Agent 和 RAG 的区别在哪？」
+基于原生 function calling 实现多步工具调用循环：模型自主选择工具与参数，
+执行结果通过 ToolMessage 回灌上下文，直到模型给出最终回答或达到步数上限。
 
-RAG 是：检索一次 → 生成一次 → 结束。（直线）
-Agent 是：想 → 调工具 → 看结果 → 再想 → …… → 决定不再调，回答。（循环）
+与单次 RAG 问答的区别：
+- RAG：检索一次 → 生成一次 → 结束。
+- Agent：模型判断 → 调用工具 → 读取结果 → 继续推理，可进行多步调用。
 
-区别只有两点：① 调哪个工具由模型自己决定；② 可以调多次。
+search_kb 复用项目的 retrieve()，将检索能力封装为 Agent 可调用工具；
+calc 使用 AST 白名单执行四则运算，避免直接 eval。
 
-复用你已有的检索代码：search_kb 里就是你的 retrieve()。
-所以这一步不是从零开始，是把「检索」包成 Agent 能调用的一个工具。
-
-依赖：openai / numpy / python-dotenv（和 baseline.py 一样，不用 LangChain）
+依赖：openai / numpy / python-dotenv，无需 LangChain。
 
 用法：
-    python agent_min.py                        # 跑 4 道预设题
-    python agent_min.py --ask "宠物饿了怎么办"   # 问单题
+    python agent_min.py                        # 运行预设验证场景
+    python agent_min.py --ask "宠物饿了怎么办"   # 提问单条问题
 """
 from __future__ import annotations
 
@@ -43,17 +42,17 @@ from openai import OpenAI  # noqa: E402
 from baseline_myimpl import build_index, load_chunks, retrieve  # noqa: E402
 
 # ══════════════════════════════════════════════════════════════
-# 1. 准备知识库（复用你的检索代码，一行没改）
+# 1. 初始化知识库索引，复用项目的检索实现
 # ══════════════════════════════════════════════════════════════
 CHUNKS = load_chunks()
 VOCAB, IDF, MATRIX = build_index(CHUNKS)
 
 
 # ══════════════════════════════════════════════════════════════
-# 2. 两个工具：普通 Python 函数，Agent 能不能用取决于 schema 写得清不清楚
+# 2. 工具函数：通过清晰的 schema 向模型说明用途与参数
 # ══════════════════════════════════════════════════════════════
 def search_kb(query: str) -> str:
-    """工具一：查知识库。就是你原来的 retrieve()，外面包了一层字符串输出。"""
+    """查询知识库，复用 retrieve() 并将检索结果格式化为工具输出。"""
     hits = retrieve(query, MATRIX, CHUNKS, VOCAB, IDF, k=3)
     if not hits or hits[0][0] <= 0:
         return "知识库中没有相关内容。"
@@ -71,7 +70,7 @@ _OPS = {
 
 
 def calc(expression: str) -> str:
-    """工具二：四则运算。故意不用 eval()，只允许数字和 + - * / ( )。"""
+    """四则运算工具：使用 AST 白名单，仅允许数字和 + - * / ( )。"""
     def ev(node):
         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
             return node.value
@@ -132,11 +131,11 @@ SYSTEM_PROMPT = (
     "4. 回答不超过 100 字，面向初中生。"
 )
 
-MAX_STEPS = 5  # 防止死循环：Agent 必须有步数上限，这是工程常识
+MAX_STEPS = 5  # 限制最大工具调用步数，避免无限循环
 
 
 # ══════════════════════════════════════════════════════════════
-# 4. 循环：Agent 的全部秘密就在这个 for 里
+# 4. 多步工具调用循环：执行工具并回灌结果，直到生成最终回答
 # ══════════════════════════════════════════════════════════════
 def run(client, question: str, verbose: bool = True) -> str:
     messages = [

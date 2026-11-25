@@ -1,15 +1,15 @@
 """
-用 @tool 装饰器写的同一版 Agent —— 对照 agent_min.py 阅读。
+工具调用 Agent 的 LangChain @tool 实现，与 agent_min.py 使用相同的循环逻辑。
 
-两版的循环逻辑完全一样，只有两处不同：
-  1. 工具定义：@tool 读函数签名 + docstring 自动生成 schema，
-     替代了手写的 TOOLS 列表（原 94–124 行）。
-  2. 调用分发：按名字查表后 .invoke(args)，替代了 if/elif 分支（原 174–179 行）。
+两种实现的差异：
+  1. 工具定义：@tool 根据函数签名、类型注解和 docstring 自动生成 schema，
+     替代手写的 TOOLS 列表。
+  2. 调用分发：按工具名称查表后执行 .invoke(args)，替代 if/elif 分支。
 
-注意装饰器没有替你做第三步——把结果塞回对话仍要自己写（本文件第 96 行）。
+工具执行结果仍通过 ToolMessage 显式回灌对话，并保留 5 步调用上限。
 
 依赖：pip install langchain-core langchain-openai
-配置：与 agent_min.py 同一个 .env（OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL）
+配置：与 agent_min.py 共用 .env（OPENAI_API_KEY / OPENAI_BASE_URL / OPENAI_MODEL）
 
 运行：
     python agent_tool_langchain.py --ask "宠物饿了怎么办？"
